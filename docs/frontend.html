@@ -1,537 +1,542 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StoryMorph - Kuku FM</title>
-  <style>
-    :root {
-      --primary: #6842ff;
-      --secondary: #4e32c2;
-      --light: #f8f9fa;
-      --dark: #212529;
-      --gray: #e9ecef;
-      --success: #28a745;
-      --warning: #ffc107;
-    }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-    
-    body {
-      background-color: #f5f5f5;
-      color: var(--dark);
-    }
-    
-    .container {
-      max-width: 420px;
-      margin: 0 auto;
-      background-color: white;
-      min-height: 100vh;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-      position: relative;
-    }
-    
-    header {
-      background-color: var(--primary);
-      color: white;
-      padding: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .logo {
-      font-weight: bold;
-      font-size: 20px;
-    }
-    
-    .header-icons {
-      display: flex;
-      gap: 16px;
-    }
-    
-    .header-icon {
-      font-size: 20px;
-    }
-    
-    .storymorph-header {
-      margin-top: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    .storymorph-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 18px;
-      font-weight: 600;
-    }
-    
-    .tag {
-      background-color: var(--warning);
-      color: var(--dark);
-      font-size: 10px;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-weight: bold;
-    }
-    
-    .story-grid {
-      padding: 16px;
-    }
-    
-    .section-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .section-title .more {
-      color: var(--primary);
-      font-size: 14px;
-      font-weight: 500;
-    }
-    
-    .story-cards {
-      display: flex;
-      gap: 16px;
-      overflow-x: auto;
-      padding-bottom: 12px;
-      scrollbar-width: none;
-    }
-    
-    .story-cards::-webkit-scrollbar {
-      display: none;
-    }
-    
-    .story-card {
-      min-width: 140px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      transition: transform 0.2s;
-    }
-    
-    .story-card:hover {
-      transform: translateY(-4px);
-    }
-    
-    .story-cover {
-      height: 180px;
-      position: relative;
-    }
-    
-    .story-cover img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .story-info {
-      padding: 12px;
-      background-color: white;
-    }
-    
-    .story-title {
-      font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 4px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      line-height: 1.3;
-      height: 36px;
-    }
-    
-    .story-author {
-      font-size: 12px;
-      color: #555;
-      margin-bottom: 8px;
-    }
-    
-    .story-meta {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: #777;
-    }
-    
-    .match-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    
-    .high-match {
-      background-color: rgba(40, 167, 69, 0.9);
-    }
-    
-    .nav-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: space-around;
-      background-color: white;
-      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-      padding: 12px 0;
-      max-width: 420px;
-      margin: 0 auto;
-    }
-    
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      color: #888;
-      font-size: 10px;
-    }
-    
-    .nav-item.active {
-      color: var(--primary);
-    }
-    
-    .nav-icon {
-      font-size: 24px;
-    }
-    
-    .category-chips {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 16px 16px 8px;
-      scrollbar-width: none;
-    }
-    
-    .category-chips::-webkit-scrollbar {
-      display: none;
-    }
-    
-    .chip {
-      padding: 8px 16px;
-      background-color: var(--gray);
-      border-radius: 20px;
-      font-size: 14px;
-      white-space: nowrap;
-    }
-    
-    .chip.active {
-      background-color: var(--primary);
-      color: white;
-    }
-    
-    .reason-tag {
-      font-size: 11px;
-      padding: 2px 6px;
-      border-radius: 10px;
-      background-color: #e9f5ff;
-      color: #0075ca;
-      margin-top: 4px;
-      display: inline-block;
-    }
-    
-    .feedback-buttons {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    
-    .feedback-btn {
-      font-size: 20px;
-      border: none;
-      background: none;
-      color: #aaa;
-      cursor: pointer;
-    }
-    
-    .feedback-btn:hover {
-      color: var(--primary);
-    }
-    
-    .why-recommend {
-      padding: 16px;
-      background-color: #f9f9f9;
-      border-radius: 12px;
-      margin: 16px;
-    }
-    
-    .why-title {
-      font-weight: 600;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .reason-list {
-      list-style: none;
-    }
-    
-    .reason-item {
-      margin: 8px 0;
-      padding-left: 18px;
-      position: relative;
-      font-size: 14px;
-    }
-    
-    .reason-item::before {
-      content: "•";
-      position: absolute;
-      left: 0;
-      color: var(--primary);
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <div class="header-content">
-        <div class="logo">Kuku FM</div>
-        <div class="header-icons">
-          <span class="header-icon">🔍</span>
-          <span class="header-icon">🔔</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StoryMorph - Kuku FM</title>
+    <script>
+      // API Configuration
+      const API_BASE_URL = "https://satvikofficial.github.io/StoryMorph/api";
+    </script>
+    <style>
+      :root {
+        --primary: #6842ff;
+        --secondary: #4e32c2;
+        --light: #f8f9fa;
+        --dark: #212529;
+        --gray: #e9ecef;
+        --success: #28a745;
+        --warning: #ffc107;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        color: var(--dark);
+      }
+
+      .container {
+        max-width: 420px;
+        margin: 0 auto;
+        background-color: white;
+        min-height: 100vh;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        position: relative;
+      }
+
+      header {
+        background-color: var(--primary);
+        color: white;
+        padding: 16px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-weight: bold;
+        font-size: 20px;
+      }
+
+      .header-icons {
+        display: flex;
+        gap: 16px;
+      }
+
+      .header-icon {
+        font-size: 20px;
+      }
+
+      .storymorph-header {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .storymorph-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .tag {
+        background-color: var(--warning);
+        color: var(--dark);
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: bold;
+      }
+
+      .story-grid {
+        padding: 16px;
+      }
+
+      .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .section-title .more {
+        color: var(--primary);
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .story-cards {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        padding-bottom: 12px;
+        scrollbar-width: none;
+      }
+
+      .story-cards::-webkit-scrollbar {
+        display: none;
+      }
+
+      .story-card {
+        min-width: 140px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+      }
+
+      .story-card:hover {
+        transform: translateY(-4px);
+      }
+
+      .story-cover {
+        height: 180px;
+        position: relative;
+      }
+
+      .story-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .story-info {
+        padding: 12px;
+        background-color: white;
+      }
+
+      .story-title {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.3;
+        height: 36px;
+      }
+
+      .story-author {
+        font-size: 12px;
+        color: #555;
+        margin-bottom: 8px;
+      }
+
+      .story-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #777;
+      }
+
+      .match-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .high-match {
+        background-color: rgba(40, 167, 69, 0.9);
+      }
+
+      .nav-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-around;
+        background-color: white;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        padding: 12px 0;
+        max-width: 420px;
+        margin: 0 auto;
+      }
+
+      .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        color: #888;
+        font-size: 10px;
+      }
+
+      .nav-item.active {
+        color: var(--primary);
+      }
+
+      .nav-icon {
+        font-size: 24px;
+      }
+
+      .category-chips {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 16px 16px 8px;
+        scrollbar-width: none;
+      }
+
+      .category-chips::-webkit-scrollbar {
+        display: none;
+      }
+
+      .chip {
+        padding: 8px 16px;
+        background-color: var(--gray);
+        border-radius: 20px;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+
+      .chip.active {
+        background-color: var(--primary);
+        color: white;
+      }
+
+      .reason-tag {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        background-color: #e9f5ff;
+        color: #0075ca;
+        margin-top: 4px;
+        display: inline-block;
+      }
+
+      .feedback-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .feedback-btn {
+        font-size: 20px;
+        border: none;
+        background: none;
+        color: #aaa;
+        cursor: pointer;
+      }
+
+      .feedback-btn:hover {
+        color: var(--primary);
+      }
+
+      .why-recommend {
+        padding: 16px;
+        background-color: #f9f9f9;
+        border-radius: 12px;
+        margin: 16px;
+      }
+
+      .why-title {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .reason-list {
+        list-style: none;
+      }
+
+      .reason-item {
+        margin: 8px 0;
+        padding-left: 18px;
+        position: relative;
+        font-size: 14px;
+      }
+
+      .reason-item::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: var(--primary);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-content">
+          <div class="logo">Kuku FM</div>
+          <div class="header-icons">
+            <span class="header-icon">🔍</span>
+            <span class="header-icon">🔔</span>
+          </div>
+        </div>
+        <div class="storymorph-header">
+          <div class="storymorph-title">
+            <span>StoryMorph</span>
+            <span class="tag">AI POWERED</span>
+          </div>
+          <span style="color: #ddd">⚙️</span>
+        </div>
+      </header>
+
+      <div class="category-chips">
+        <div class="chip active">All</div>
+        <div class="chip">Fiction</div>
+        <div class="chip">Self-Help</div>
+        <div class="chip">Mystery</div>
+        <div class="chip">Romance</div>
+        <div class="chip">History</div>
+        <div class="chip">Business</div>
+      </div>
+
+      <div class="why-recommend">
+        <div class="why-title">
+          <span>🧠</span>
+          <span>How StoryMorph works</span>
+        </div>
+        <div class="reason-list">
+          <div class="reason-item">Analyzes your listening history</div>
+          <div class="reason-item">Identifies patterns in your preferences</div>
+          <div class="reason-item">Finds stories that match your taste</div>
+          <div class="reason-item">Improves with your feedback</div>
         </div>
       </div>
-      <div class="storymorph-header">
-        <div class="storymorph-title">
-          <span>StoryMorph</span>
-          <span class="tag">AI POWERED</span>
+
+      <div class="story-grid">
+        <div class="section-title">
+          <span>Highly Recommended for You</span>
+          <span class="more">See all</span>
         </div>
-        <span style="color: #ddd;">⚙️</span>
+        <div class="story-cards">
+          <div class="story-card">
+            <div class="story-cover">
+              <img src="/api/placeholder/140/180" alt="Story cover" />
+              <div class="match-badge high-match">98% Match</div>
+            </div>
+            <div class="story-info">
+              <div class="story-title">The Silent Patient</div>
+              <div class="story-author">Alex Michaelides</div>
+              <div class="reason-tag">Based on your mystery preference</div>
+              <div class="feedback-buttons">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-cover">
+              <img src="/api/placeholder/140/180" alt="Story cover" />
+              <div class="match-badge high-match">95% Match</div>
+            </div>
+            <div class="story-info">
+              <div class="story-title">Atomic Habits</div>
+              <div class="story-author">James Clear</div>
+              <div class="reason-tag">Similar to books you like</div>
+              <div class="feedback-buttons">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-cover">
+              <img src="/api/placeholder/140/180" alt="Story cover" />
+              <div class="match-badge high-match">94% Match</div>
+            </div>
+            <div class="story-info">
+              <div class="story-title">Project Hail Mary</div>
+              <div class="story-author">Andy Weir</div>
+              <div class="reason-tag">For sci-fi enthusiasts</div>
+              <div class="feedback-buttons">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </header>
-    
-    <div class="category-chips">
-      <div class="chip active">All</div>
-      <div class="chip">Fiction</div>
-      <div class="chip">Self-Help</div>
-      <div class="chip">Mystery</div>
-      <div class="chip">Romance</div>
-      <div class="chip">History</div>
-      <div class="chip">Business</div>
+
+      <div class="story-grid">
+        <div class="section-title">
+          <span>Because You Listened to "Think Like a Monk"</span>
+          <span class="more">See all</span>
+        </div>
+        <div class="story-cards">
+          <div class="story-card">
+            <div class="story-cover">
+              <img src="/api/placeholder/140/180" alt="Story cover" />
+              <div class="match-badge">87% Match</div>
+            </div>
+            <div class="story-info">
+              <div class="story-title">The Power of Now</div>
+              <div class="story-author">Eckhart Tolle</div>
+              <div class="feedback-buttons">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-cover">
+              <img src="/api/placeholder/140/180" alt="Story cover" />
+              <div class="match-badge">84% Match</div>
+            </div>
+            <div class="story-info">
+              <div class="story-title">The Monk Who Sold His Ferrari</div>
+              <div class="story-author">Robin Sharma</div>
+              <div class="feedback-buttons">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-cover">
+              <img src="/api/placeholder/140/180" alt="Story cover" />
+              <div class="match-badge">82% Match</div>
+            </div>
+            <div class="story-info">
+              <div class="story-title">Ikigai: The Japanese Secret</div>
+              <div class="story-author">Héctor García</div>
+              <div class="feedback-buttons">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="story-grid">
+        <div class="section-title">
+          <span>New Discoveries</span>
+          <span class="more">See all</span>
+        </div>
+        <div class="story-cards">
+          <div class="story-card">
+            <div class="story-cover">
+              <img src="/api/placeholder/140/180" alt="Story cover" />
+              <div class="match-badge">78% Match</div>
+            </div>
+            <div class="story-info">
+              <div class="story-title">Educated</div>
+              <div class="story-author">Tara Westover</div>
+              <div class="reason-tag">Expanding your horizons</div>
+              <div class="feedback-buttons">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-cover">
+              <img src="/api/placeholder/140/180" alt="Story cover" />
+              <div class="match-badge">75% Match</div>
+            </div>
+            <div class="story-info">
+              <div class="story-title">The Alchemist</div>
+              <div class="story-author">Paulo Coelho</div>
+              <div class="reason-tag">Popular in your age group</div>
+              <div class="feedback-buttons">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-cover">
+              <img src="/api/placeholder/140/180" alt="Story cover" />
+              <div class="match-badge">73% Match</div>
+            </div>
+            <div class="story-info">
+              <div class="story-title">Sapiens: A Brief History</div>
+              <div class="story-author">Yuval Noah Harari</div>
+              <div class="reason-tag">Trending now</div>
+              <div class="feedback-buttons">
+                <button class="feedback-btn">👍</button>
+                <button class="feedback-btn">👎</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height: 80px"></div>
+      <!-- Spacer for navigation bar -->
+
+      <div class="nav-bar">
+        <div class="nav-item">
+          <div class="nav-icon">🏠</div>
+          <div>Home</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">🔍</div>
+          <div>Browse</div>
+        </div>
+        <div class="nav-item active">
+          <div class="nav-icon">✨</div>
+          <div>StoryMorph</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">📚</div>
+          <div>Library</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">👤</div>
+          <div>Profile</div>
+        </div>
+      </div>
     </div>
-    
-    <div class="why-recommend">
-      <div class="why-title">
-        <span>🧠</span>
-        <span>How StoryMorph works</span>
-      </div>
-      <div class="reason-list">
-        <div class="reason-item">Analyzes your listening history</div>
-        <div class="reason-item">Identifies patterns in your preferences</div>
-        <div class="reason-item">Finds stories that match your taste</div>
-        <div class="reason-item">Improves with your feedback</div>
-      </div>
-    </div>
-    
-    <div class="story-grid">
-      <div class="section-title">
-        <span>Highly Recommended for You</span>
-        <span class="more">See all</span>
-      </div>
-      <div class="story-cards">
-        <div class="story-card">
-          <div class="story-cover">
-            <img src="/api/placeholder/140/180" alt="Story cover">
-            <div class="match-badge high-match">98% Match</div>
-          </div>
-          <div class="story-info">
-            <div class="story-title">The Silent Patient</div>
-            <div class="story-author">Alex Michaelides</div>
-            <div class="reason-tag">Based on your mystery preference</div>
-            <div class="feedback-buttons">
-              <button class="feedback-btn">👍</button>
-              <button class="feedback-btn">👎</button>
-            </div>
-          </div>
-        </div>
-        <div class="story-card">
-          <div class="story-cover">
-            <img src="/api/placeholder/140/180" alt="Story cover">
-            <div class="match-badge high-match">95% Match</div>
-          </div>
-          <div class="story-info">
-            <div class="story-title">Atomic Habits</div>
-            <div class="story-author">James Clear</div>
-            <div class="reason-tag">Similar to books you like</div>
-            <div class="feedback-buttons">
-              <button class="feedback-btn">👍</button>
-              <button class="feedback-btn">👎</button>
-            </div>
-          </div>
-        </div>
-        <div class="story-card">
-          <div class="story-cover">
-            <img src="/api/placeholder/140/180" alt="Story cover">
-            <div class="match-badge high-match">94% Match</div>
-          </div>
-          <div class="story-info">
-            <div class="story-title">Project Hail Mary</div>
-            <div class="story-author">Andy Weir</div>
-            <div class="reason-tag">For sci-fi enthusiasts</div>
-            <div class="feedback-buttons">
-              <button class="feedback-btn">👍</button>
-              <button class="feedback-btn">👎</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="story-grid">
-      <div class="section-title">
-        <span>Because You Listened to "Think Like a Monk"</span>
-        <span class="more">See all</span>
-      </div>
-      <div class="story-cards">
-        <div class="story-card">
-          <div class="story-cover">
-            <img src="/api/placeholder/140/180" alt="Story cover">
-            <div class="match-badge">87% Match</div>
-          </div>
-          <div class="story-info">
-            <div class="story-title">The Power of Now</div>
-            <div class="story-author">Eckhart Tolle</div>
-            <div class="feedback-buttons">
-              <button class="feedback-btn">👍</button>
-              <button class="feedback-btn">👎</button>
-            </div>
-          </div>
-        </div>
-        <div class="story-card">
-          <div class="story-cover">
-            <img src="/api/placeholder/140/180" alt="Story cover">
-            <div class="match-badge">84% Match</div>
-          </div>
-          <div class="story-info">
-            <div class="story-title">The Monk Who Sold His Ferrari</div>
-            <div class="story-author">Robin Sharma</div>
-            <div class="feedback-buttons">
-              <button class="feedback-btn">👍</button>
-              <button class="feedback-btn">👎</button>
-            </div>
-          </div>
-        </div>
-        <div class="story-card">
-          <div class="story-cover">
-            <img src="/api/placeholder/140/180" alt="Story cover">
-            <div class="match-badge">82% Match</div>
-          </div>
-          <div class="story-info">
-            <div class="story-title">Ikigai: The Japanese Secret</div>
-            <div class="story-author">Héctor García</div>
-            <div class="feedback-buttons">
-              <button class="feedback-btn">👍</button>
-              <button class="feedback-btn">👎</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="story-grid">
-      <div class="section-title">
-        <span>New Discoveries</span>
-        <span class="more">See all</span>
-      </div>
-      <div class="story-cards">
-        <div class="story-card">
-          <div class="story-cover">
-            <img src="/api/placeholder/140/180" alt="Story cover">
-            <div class="match-badge">78% Match</div>
-          </div>
-          <div class="story-info">
-            <div class="story-title">Educated</div>
-            <div class="story-author">Tara Westover</div>
-            <div class="reason-tag">Expanding your horizons</div>
-            <div class="feedback-buttons">
-              <button class="feedback-btn">👍</button>
-              <button class="feedback-btn">👎</button>
-            </div>
-          </div>
-        </div>
-        <div class="story-card">
-          <div class="story-cover">
-            <img src="/api/placeholder/140/180" alt="Story cover">
-            <div class="match-badge">75% Match</div>
-          </div>
-          <div class="story-info">
-            <div class="story-title">The Alchemist</div>
-            <div class="story-author">Paulo Coelho</div>
-            <div class="reason-tag">Popular in your age group</div>
-            <div class="feedback-buttons">
-              <button class="feedback-btn">👍</button>
-              <button class="feedback-btn">👎</button>
-            </div>
-          </div>
-        </div>
-        <div class="story-card">
-          <div class="story-cover">
-            <img src="/api/placeholder/140/180" alt="Story cover">
-            <div class="match-badge">73% Match</div>
-          </div>
-          <div class="story-info">
-            <div class="story-title">Sapiens: A Brief History</div>
-            <div class="story-author">Yuval Noah Harari</div>
-            <div class="reason-tag">Trending now</div>
-            <div class="feedback-buttons">
-              <button class="feedback-btn">👍</button>
-              <button class="feedback-btn">👎</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div style="height: 80px;"></div> <!-- Spacer for navigation bar -->
-    
-    <div class="nav-bar">
-      <div class="nav-item">
-        <div class="nav-icon">🏠</div>
-        <div>Home</div>
-      </div>
-      <div class="nav-item">
-        <div class="nav-icon">🔍</div>
-        <div>Browse</div>
-      </div>
-      <div class="nav-item active">
-        <div class="nav-icon">✨</div>
-        <div>StoryMorph</div>
-      </div>
-      <div class="nav-item">
-        <div class="nav-icon">📚</div>
-        <div>Library</div>
-      </div>
-      <div class="nav-item">
-        <div class="nav-icon">👤</div>
-        <div>Profile</div>
-      </div>
-    </div>
-  </div>
-</body>
+  </body>
 </html>

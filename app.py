@@ -5,9 +5,9 @@ from ai_model import StoryRecommender
 import os
 
 app = Flask(__name__, static_folder='static')
-# Replace with your GitHub Pages URL
+# Updated CORS settings for GitHub Pages
 CORS(app, resources={
-     r"/api/*": {"origins": ["https://yourusername.github.io"]}})
+     r"/api/*": {"origins": ["https://satvikofficial.github.io"]}})
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///storymorph.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
