@@ -21,7 +21,7 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    return send_from_directory('static', 'frontend.html')
+    return send_from_directory('docs', 'index.html')
 
 
 @app.route('/api/users')
