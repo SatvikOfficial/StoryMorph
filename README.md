@@ -54,7 +54,7 @@ StoryMorph is an intelligent story recommendation system that uses AI to suggest
    ```
 
 5. **Access the application**:
-   - Frontend: Open `docs/frontend.html` in your browser
+   - Frontend: Open `docs/index.html` in your browser
    - Backend: The API will be available at `http://localhost:5000`
 
 ## Project Structure
@@ -62,7 +62,7 @@ StoryMorph is an intelligent story recommendation system that uses AI to suggest
 ```
 StoryMorph/
 ├── docs/                    # GitHub Pages directory
-│   └── frontend.html       # Frontend application
+│   └── index.html       # Frontend application
 ├── app.py                  # Flask application
 ├── models.py              # Database models
 ├── ai_model.py            # Recommendation engine
