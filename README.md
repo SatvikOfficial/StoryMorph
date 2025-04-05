@@ -94,5 +94,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- Thanks to all contributors who have helped improve this project
 - Special thanks to the open-source community for the tools and libraries used
