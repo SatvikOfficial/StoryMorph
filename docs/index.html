@@ -358,6 +358,20 @@
             const userId = e.target.value;
             if (userId) {
               currentUserId = userId;
+              // Get user preferences
+              const user = users.find((u) => u.id === parseInt(userId));
+              if (user) {
+                userPreferences = user.preferences;
+                // Update preference buttons
+                Object.entries(userPreferences).forEach(([category, level]) => {
+                  const button = document.querySelector(
+                    `.pref-btn[data-category="${category}"][data-level="${level}"]`
+                  );
+                  if (button) {
+                    button.classList.add("active");
+                  }
+                });
+              }
               await loadRecommendations();
             }
           });

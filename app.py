@@ -46,12 +46,12 @@ def get_recommendations():
         user_id = data.get('user_id')
         preferences = data.get('preferences', {})
         category = data.get('category', 'All')
-        recommendation_type = data.get('type', 'highly_recommended')
+        recommendation_type = data.get('type', 'all')
     else:
         user_id = request.args.get('user_id')
         preferences = {}
         category = request.args.get('category', 'All')
-        recommendation_type = request.args.get('type', 'highly_recommended')
+        recommendation_type = request.args.get('type', 'all')
 
     if not user_id:
         return jsonify({'stories': []})
@@ -210,25 +210,12 @@ def get_recommendations():
             sample_stories = [
                 s for s in sample_stories if s['category'] == category]
 
-        # Return different number of recommendations based on type
-        if recommendation_type == 'highly_recommended':
-            return jsonify({
-                'highly_recommended': sample_stories[:6],
-                'because_you_listened': sample_stories[6:12],
-                'new_discoveries': sample_stories[12:18]
-            })
-        elif recommendation_type == 'because_you_listened':
-            return jsonify({
-                'highly_recommended': sample_stories[6:12],
-                'because_you_listened': sample_stories[:6],
-                'new_discoveries': sample_stories[12:18]
-            })
-        else:  # new_discoveries
-            return jsonify({
-                'highly_recommended': sample_stories[12:18],
-                'because_you_listened': sample_stories[:6],
-                'new_discoveries': sample_stories[6:12]
-            })
+        # Return all recommendations
+        return jsonify({
+            'highly_recommended': sample_stories[:6],
+            'because_you_listened': sample_stories[6:12],
+            'new_discoveries': sample_stories[12:18]
+        })
 
     except Exception as e:
         print(f"Error getting recommendations: {str(e)}")
@@ -284,6 +271,27 @@ def update_user_preferences(user_id):
         return jsonify({'status': 'success'})
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/preferences', methods=['POST'])
+def update_preferences():
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        preferences = data.get('preferences', {})
+
+        if not user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+
+        # In a real app, we would update the database here
+        # For now, we'll just return success
+        return jsonify({
+            'status': 'success',
+            'message': 'Preferences updated successfully'
+        })
+
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
