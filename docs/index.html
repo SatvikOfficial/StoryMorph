@@ -386,6 +386,9 @@
             }
           });
         }
+
+        // Initialize search
+        initializeSearch();
       }
 
       // Load recommendations based on user preferences
@@ -559,6 +562,14 @@
         }
 
         try {
+          // Update the user's preferences in the users array
+          const userIndex = users.findIndex(
+            (u) => u.id === parseInt(currentUserId)
+          );
+          if (userIndex !== -1) {
+            users[userIndex].preferences = { ...userPreferences };
+          }
+
           const response = await fetch("/api/preferences", {
             method: "POST",
             headers: {
@@ -574,8 +585,9 @@
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
-          // Close popup and reload recommendations
+          // Close the popup
           const popup = document.getElementById("customizePopup");
+          const overlay = document.querySelector(".overlay");
           if (popup) {
             popup.classList.remove("show");
             overlay.classList.remove("show");
@@ -584,11 +596,71 @@
             }, 300);
           }
 
+          // Show success message
+          const successMessage = document.createElement("div");
+          successMessage.className = "success-message";
+          successMessage.textContent = "Preferences saved successfully!";
+          document.body.appendChild(successMessage);
+
+          // Remove success message after 2 seconds
+          setTimeout(() => {
+            successMessage.remove();
+          }, 2000);
+
+          // Reload recommendations with new preferences
           await loadRecommendations();
         } catch (error) {
           console.error("Error saving preferences:", error);
+          // Show error message
+          const errorMessage = document.createElement("div");
+          errorMessage.className = "error-message";
+          errorMessage.textContent =
+            "Error saving preferences. Please try again.";
+          document.body.appendChild(errorMessage);
+
+          // Remove error message after 2 seconds
+          setTimeout(() => {
+            errorMessage.remove();
+          }, 2000);
         }
       }
+
+      // Add styles for success and error messages
+      const messageStyles = document.createElement("style");
+      messageStyles.textContent = `
+        .success-message, .error-message {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-weight: 500;
+          z-index: 1000;
+          animation: slideIn 0.3s ease-out;
+        }
+
+        .success-message {
+          background-color: #2ecc71;
+          color: white;
+        }
+
+        .error-message {
+          background-color: #e74c3c;
+          color: white;
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `;
+      document.head.appendChild(messageStyles);
 
       // Add See More functionality
       function showCategoryPopup(category) {
@@ -995,6 +1067,83 @@
         }
       `;
       document.head.appendChild(style);
+
+      // Add search functionality
+      function initializeSearch() {
+        const searchInput = document.querySelector(".search-input");
+        if (searchInput) {
+          searchInput.addEventListener("input", debounce(handleSearch, 300));
+        }
+      }
+
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+
+      async function handleSearch(event) {
+        const searchTerm = event.target.value.toLowerCase().trim();
+        if (!searchTerm) {
+          // If search is empty, reload original recommendations
+          await loadRecommendations();
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/recommendations", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: currentUserId,
+              preferences: userPreferences,
+              search: searchTerm,
+              type: "all",
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          // Filter stories based on search term
+          const filteredData = {
+            highly_recommended: filterStories(
+              data.highly_recommended,
+              searchTerm
+            ),
+            because_you_listened: filterStories(
+              data.because_you_listened,
+              searchTerm
+            ),
+            new_discoveries: filterStories(data.new_discoveries, searchTerm),
+          };
+
+          // Update UI with filtered results
+          updateRecommendationsUI(filteredData);
+        } catch (error) {
+          console.error("Error searching stories:", error);
+        }
+      }
+
+      function filterStories(stories, searchTerm) {
+        if (!stories) return [];
+        return stories.filter(
+          (story) =>
+            story.title.toLowerCase().includes(searchTerm) ||
+            story.author.toLowerCase().includes(searchTerm)
+        );
+      }
     </script>
     <style>
       :root {
