@@ -36,11 +36,21 @@ def generate_sample_data():
         # Create users
         users = []
         for name in user_names:
+            # Generate random preferences using low/medium/high
+            preferences = {}
+            for category in categories:
+                rand = random.random()
+                if rand < 0.33:
+                    preferences[category] = 'low'
+                elif rand < 0.66:
+                    preferences[category] = 'medium'
+                else:
+                    preferences[category] = 'high'
+
             user = User(
                 username=name,
                 email=f"{name.lower()}@example.com",
-                preferences={category: random.random()
-                             for category in categories}
+                preferences=preferences
             )
             users.append(user)
             db.session.add(user)

@@ -75,13 +75,14 @@ class StoryRecommender:
                 'author': story.author,
                 'category': story.category,
                 'description': story.description,
-                'match_score': int(match_score * 100),
+                'match_score': self._get_preference_level(match_score),
                 'cover_image': 'https://picsum.photos/300/400'  # Use consistent placeholder image
             }
             recommendations.append(recommendation)
 
         # Sort by match score
-        recommendations.sort(key=lambda x: x['match_score'], reverse=True)
+        recommendations.sort(key=lambda x: self._get_score_value(
+            x['match_score']), reverse=True)
 
         # Return different number of recommendations based on type
         if recommendation_type == 'highly_recommended':
@@ -90,6 +91,19 @@ class StoryRecommender:
             return recommendations[6:12]  # Next 6 recommendations
         else:  # new_discoveries
             return recommendations[12:18]  # Next 6 recommendations
+
+    def _get_preference_level(self, score):
+        """Convert numerical score to preference level"""
+        if score >= 0.7:
+            return 'high'
+        elif score >= 0.4:
+            return 'medium'
+        else:
+            return 'low'
+
+    def _get_score_value(self, level):
+        """Convert preference level to numerical value for sorting"""
+        return {'high': 3, 'medium': 2, 'low': 1}.get(level, 0)
 
     def _calculate_match_score(self, user, story):
         """Calculate match score between user and story"""
@@ -100,7 +114,13 @@ class StoryRecommender:
 
         # Category preference (40% weight)
         if story.category in user.preferences:
-            score += 0.4 * user.preferences[story.category]
+            preference = user.preferences[story.category]
+            if preference == 'high':
+                score += 0.4
+            elif preference == 'medium':
+                score += 0.2
+            elif preference == 'low':
+                score += 0.1
 
         # Recent interactions (30% weight)
         recent_interactions = UserInteraction.query.filter(
@@ -178,15 +198,22 @@ class StoryRecommender:
 
         if user and story:
             if story.category not in user.preferences:
-                user.preferences[story.category] = 0.5  # Initial preference
+                # Initial preference
+                user.preferences[story.category] = 'medium'
 
             # Update preference based on feedback
             if is_positive:
-                user.preferences[story.category] = min(
-                    1.0, user.preferences[story.category] + 0.1)
+                current_pref = user.preferences[story.category]
+                if current_pref == 'low':
+                    user.preferences[story.category] = 'medium'
+                elif current_pref == 'medium':
+                    user.preferences[story.category] = 'high'
             else:
-                user.preferences[story.category] = max(
-                    0.0, user.preferences[story.category] - 0.1)
+                current_pref = user.preferences[story.category]
+                if current_pref == 'high':
+                    user.preferences[story.category] = 'medium'
+                elif current_pref == 'medium':
+                    user.preferences[story.category] = 'low'
 
         db.session.commit()
 
