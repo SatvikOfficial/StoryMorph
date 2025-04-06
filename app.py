@@ -50,8 +50,8 @@ def get_recommendations():
     else:
         user_id = request.args.get('user_id')
         preferences = {}
-        category = request.args.get('category', 'All')
-        recommendation_type = request.args.get('type', 'all')
+    category = request.args.get('category', 'All')
+    recommendation_type = request.args.get('type', 'all')
 
     try:
         # Sample stories for testing
@@ -252,38 +252,6 @@ def get_recommendations():
 
         # Sort all stories by match score
         sample_stories.sort(key=lambda x: x['match_score'], reverse=True)
-
-        # If no user is selected, show default recommendations
-        if not user_id:
-            # Get unique categories
-            categories = list(set(s['category'] for s in sample_stories))
-
-            # For "Highly Recommended", take top 5 books from each category
-            highly_recommended = []
-            for cat in categories:
-                cat_books = [
-                    s for s in sample_stories if s['category'] == cat][:5]
-                highly_recommended.extend(cat_books)
-            highly_recommended = sorted(
-                highly_recommended, key=lambda x: x['match_score'], reverse=True)[:5]
-
-            # For "Because You Listened", pick a random book and its similar books
-            # Using the highest rated book as default
-            random_book = sample_stories[0]
-            similar_books = [s for s in sample_stories if s['category'] ==
-                             random_book['category'] and s['id'] != random_book['id']][:5]
-
-            # For "New Discoveries", take 5 random books (excluding those in other sections)
-            remaining_books = [
-                s for s in sample_stories if s not in highly_recommended and s not in similar_books]
-            new_discoveries = remaining_books[:5] if len(
-                remaining_books) >= 5 else remaining_books
-
-            return jsonify({
-                'highly_recommended': highly_recommended,
-                'because_you_listened': similar_books,
-                'new_discoveries': new_discoveries
-            })
 
         # Get the highest rated book overall for "Because You Listened" section
         highest_rated = sample_stories[0]
