@@ -253,6 +253,38 @@ def get_recommendations():
         # Sort all stories by match score
         sample_stories.sort(key=lambda x: x['match_score'], reverse=True)
 
+        # If no user is selected, show default recommendations
+        if not user_id:
+            # Get unique categories
+            categories = list(set(s['category'] for s in sample_stories))
+
+            # For "Highly Recommended", take top 5 books from each category
+            highly_recommended = []
+            for cat in categories:
+                cat_books = [
+                    s for s in sample_stories if s['category'] == cat][:5]
+                highly_recommended.extend(cat_books)
+            highly_recommended = sorted(
+                highly_recommended, key=lambda x: x['match_score'], reverse=True)[:5]
+
+            # For "Because You Listened", pick a random book and its similar books
+            # Using the highest rated book as default
+            random_book = sample_stories[0]
+            similar_books = [s for s in sample_stories if s['category'] ==
+                             random_book['category'] and s['id'] != random_book['id']][:5]
+
+            # For "New Discoveries", take 5 random books (excluding those in other sections)
+            remaining_books = [
+                s for s in sample_stories if s not in highly_recommended and s not in similar_books]
+            new_discoveries = remaining_books[:5] if len(
+                remaining_books) >= 5 else remaining_books
+
+            return jsonify({
+                'highly_recommended': highly_recommended,
+                'because_you_listened': similar_books,
+                'new_discoveries': new_discoveries
+            })
+
         # Get the highest rated book overall for "Because You Listened" section
         highest_rated = sample_stories[0]
 
@@ -262,9 +294,13 @@ def get_recommendations():
             highly_recommended = [
                 s for s in sample_stories if s['category'] == highest_rated['category']][:5]
 
-            # Get 5 random books for "New Discoveries" (excluding those in highly recommended)
+            # Get 5 similar books for "Because You Listened" (same category as highest rated, excluding the book itself)
+            similar_books = [s for s in sample_stories if s['category'] ==
+                             highest_rated['category'] and s['id'] != highest_rated['id']][:5]
+
+            # Get 5 random books for "New Discoveries" (excluding those in highly recommended and because you listened)
             remaining_books = [
-                s for s in sample_stories if s not in highly_recommended]
+                s for s in sample_stories if s not in highly_recommended and s not in similar_books]
             new_discoveries = remaining_books[:5] if len(
                 remaining_books) >= 5 else remaining_books
 
@@ -277,8 +313,10 @@ def get_recommendations():
             # If we have enough books in this category
             if len(category_stories) >= 5:
                 highly_recommended = category_stories[:5]
-                new_discoveries = category_stories[5:10] if len(
-                    category_stories) >= 10 else category_stories[5:]
+                # Get similar books for "Because You Listened" (excluding the first book)
+                similar_books = category_stories[1:6]
+                new_discoveries = category_stories[6:11] if len(
+                    category_stories) >= 11 else category_stories[6:]
             else:
                 # If not enough books in category, fill with highest rated books from other categories
                 highly_recommended = category_stories[:]
@@ -287,24 +325,28 @@ def get_recommendations():
                     s for s in sample_stories if s['category'] != category]
                 highly_recommended.extend(other_books[:remaining_slots])
 
-                # For new discoveries, take remaining books from this category plus others
-                new_discoveries = []
-                if len(category_stories) > len(highly_recommended):
-                    new_discoveries = category_stories[len(
-                        highly_recommended):]
-                remaining_slots = 5 - len(new_discoveries)
-                new_discoveries.extend(
-                    other_books[len(highly_recommended):len(highly_recommended) + remaining_slots])
+                # For "Because You Listened", take remaining books from this category plus others
+                similar_books = []
+                if len(category_stories) > 1:
+                    similar_books = category_stories[1:]
+                remaining_slots = 5 - len(similar_books)
+                similar_books.extend(other_books[:remaining_slots])
+
+                # For new discoveries, take remaining books
+                new_discoveries = other_books[len(
+                    similar_books):len(similar_books) + 5]
 
         # Ensure we always have books in each section
         if not highly_recommended:
             highly_recommended = sample_stories[:5]
+        if not similar_books:
+            similar_books = sample_stories[1:6]
         if not new_discoveries:
-            new_discoveries = sample_stories[5:10]
+            new_discoveries = sample_stories[6:11]
 
         return jsonify({
             'highly_recommended': highly_recommended,
-            'because_you_listened': [highest_rated],
+            'because_you_listened': similar_books,
             'new_discoveries': new_discoveries
         })
 
