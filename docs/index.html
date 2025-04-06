@@ -10,8 +10,44 @@
       let currentUserId = null;
       let userPreferences = {};
 
+      // Add CORS headers to all fetch requests
+      const fetchWithCORS = async (url, options = {}) => {
+        const defaultOptions = {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          mode: "cors",
+          credentials: "include",
+        };
+
+        const mergedOptions = {
+          ...defaultOptions,
+          ...options,
+          headers: {
+            ...defaultOptions.headers,
+            ...options.headers,
+          },
+        };
+
+        try {
+          const response = await fetch(url, mergedOptions);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        } catch (error) {
+          console.error("Fetch error:", error);
+          throw error;
+        }
+      };
+
+      console.log("StoryMorph initialized");
+
       // Initialize the customize button
       document.querySelector(".filter-chip").addEventListener("click", () => {
+        console.log("Customize button clicked");
         document.getElementById("customizePopup").style.display = "block";
         document.getElementById("customizePopup").classList.add("show");
         overlay.classList.add("show");
@@ -20,8 +56,7 @@
       // User switching functionality
       async function loadUsers() {
         try {
-          const response = await fetch(`${API_BASE_URL}/api/users`);
-          const users = await response.json();
+          const users = await fetchWithCORS(`${API_BASE_URL}/api/users`);
           const userSelect = document.getElementById("userSelect");
 
           userSelect.innerHTML = '<option value="">Select User</option>';
@@ -85,30 +120,23 @@
         }
 
         try {
-          const response = await fetch(
+          const response = await fetchWithCORS(
             `${API_BASE_URL}/api/users/${currentUserId}/preferences`,
             {
               method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
               body: JSON.stringify({
                 preferences: userPreferences,
               }),
             }
           );
 
-          if (response.ok) {
-            alert("Preferences saved successfully!");
-            document.getElementById("customizePopup").classList.remove("show");
-            overlay.classList.remove("show");
-            setTimeout(() => {
-              document.getElementById("customizePopup").style.display = "none";
-            }, 300);
-            await loadRecommendations();
-          } else {
-            alert("Failed to save preferences");
-          }
+          alert("Preferences saved successfully!");
+          document.getElementById("customizePopup").classList.remove("show");
+          overlay.classList.remove("show");
+          setTimeout(() => {
+            document.getElementById("customizePopup").style.display = "none";
+          }, 300);
+          await loadRecommendations();
         } catch (error) {
           console.error("Error saving preferences:", error);
           alert("Error saving preferences");
@@ -123,8 +151,7 @@
             url += `&category=${encodeURIComponent(category)}`;
           }
 
-          const response = await fetch(url);
-          const data = await response.json();
+          const data = await fetchWithCORS(url);
 
           // Update each section with recommendations
           ["highlyRecommended", "becauseYouListened", "newDiscoveries"].forEach(
@@ -156,6 +183,7 @@
 
       // Initialize
       document.addEventListener("DOMContentLoaded", () => {
+        console.log("DOM loaded, initializing...");
         loadUsers();
         loadRecommendations();
       });
