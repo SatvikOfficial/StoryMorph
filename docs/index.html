@@ -162,8 +162,12 @@
           ["highlyRecommended", "becauseYouListened", "newDiscoveries"].forEach(
             (section, index) => {
               const container = document.getElementById(section);
-              container.innerHTML = "";
+              if (!container) {
+                console.error(`Container ${section} not found`);
+                return;
+              }
 
+              container.innerHTML = "";
               const stories = data.stories.slice(index * 6, (index + 1) * 6);
               stories.forEach((story) => {
                 const card = document.createElement("div");
@@ -221,15 +225,16 @@
       // Initialize
       document.addEventListener("DOMContentLoaded", () => {
         console.log("DOM loaded, initializing...");
+
+        // Add overlay element after DOM is loaded
+        const overlay = document.createElement("div");
+        overlay.className = "overlay";
+        document.body.appendChild(overlay);
+
         initializeEventListeners();
         loadUsers();
         loadRecommendations();
       });
-
-      // Add overlay element
-      const overlay = document.createElement("div");
-      overlay.className = "overlay";
-      document.body.appendChild(overlay);
     </script>
     <style>
       :root {
@@ -882,89 +887,8 @@
             </div>
           </div>
 
-          <div class="story-grid">
-            <div class="story-card">
-              <div class="story-cover">
-                <img src="/static/placeholder.jpg" alt="The Silent Patient" />
-                <div class="match-badge high-match">98% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">The Silent Patient</div>
-                <div class="story-author">Alex Michaelides</div>
-                <div class="reason-tag">Based on your mystery preference</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="story-card">
-              <div class="story-cover">
-                <img src="/static/placeholder.jpg" alt="Atomic Habits" />
-                <div class="match-badge high-match">95% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">Atomic Habits</div>
-                <div class="story-author">James Clear</div>
-                <div class="reason-tag">Similar to books you like</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="story-card">
-              <div class="story-cover">
-                <img src="/static/placeholder.jpg" alt="Project Hail Mary" />
-                <div class="match-badge high-match">94% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">Project Hail Mary</div>
-                <div class="story-author">Andy Weir</div>
-                <div class="reason-tag">For sci-fi enthusiasts</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="story-card">
-              <div class="story-cover">
-                <img
-                  src="/static/placeholder.jpg"
-                  alt="Sapiens: A Brief History"
-                />
-                <div class="match-badge high-match">92% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">Sapiens: A Brief History</div>
-                <div class="story-author">Yuval Noah Harari</div>
-                <div class="reason-tag">Based on your interests</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
+          <div class="story-grid" id="highlyRecommended">
+            <!-- Highly Recommended stories will be loaded here -->
           </div>
         </div>
 
@@ -978,92 +902,8 @@
             </div>
           </div>
 
-          <div class="story-grid">
-            <div class="story-card">
-              <div class="story-cover">
-                <img src="/static/placeholder.jpg" alt="The Power of Now" />
-                <div class="match-badge">87% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">The Power of Now</div>
-                <div class="story-author">Eckhart Tolle</div>
-                <div class="reason-tag">Similar themes</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="story-card">
-              <div class="story-cover">
-                <img
-                  src="/static/placeholder.jpg"
-                  alt="The Monk Who Sold His Ferrari"
-                />
-                <div class="match-badge">84% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">The Monk Who Sold His Ferrari</div>
-                <div class="story-author">Robin Sharma</div>
-                <div class="reason-tag">Similar author style</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="story-card">
-              <div class="story-cover">
-                <img
-                  src="/static/placeholder.jpg"
-                  alt="Ikigai: The Japanese Secret"
-                />
-                <div class="match-badge">82% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">Ikigai: The Japanese Secret</div>
-                <div class="story-author">Héctor García</div>
-                <div class="reason-tag">Similar concepts</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="story-card">
-              <div class="story-cover">
-                <img src="/static/placeholder.jpg" alt="The 5 AM Club" />
-                <div class="match-badge">79% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">The 5 AM Club</div>
-                <div class="story-author">Robin Sharma</div>
-                <div class="reason-tag">Popular with similar listeners</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
+          <div class="story-grid" id="becauseYouListened">
+            <!-- Because You Listened stories will be loaded here -->
           </div>
         </div>
 
@@ -1075,89 +915,8 @@
             </div>
           </div>
 
-          <div class="story-grid">
-            <div class="story-card">
-              <div class="story-cover">
-                <img src="/static/placeholder.jpg" alt="Educated" />
-                <div class="match-badge">78% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">Educated</div>
-                <div class="story-author">Tara Westover</div>
-                <div class="reason-tag">Expanding your horizons</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="story-card">
-              <div class="story-cover">
-                <img src="/static/placeholder.jpg" alt="The Alchemist" />
-                <div class="match-badge">75% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">The Alchemist</div>
-                <div class="story-author">Paulo Coelho</div>
-                <div class="reason-tag">Popular in your age group</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="story-card">
-              <div class="story-cover">
-                <img src="/static/placeholder.jpg" alt="Deep Work" />
-                <div class="match-badge">73% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">Deep Work</div>
-                <div class="story-author">Cal Newport</div>
-                <div class="reason-tag">Trending now</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="story-card">
-              <div class="story-cover">
-                <img
-                  src="/static/placeholder.jpg"
-                  alt="Thinking, Fast and Slow"
-                />
-                <div class="match-badge">70% Match</div>
-              </div>
-              <div class="story-info">
-                <div class="story-title">Thinking, Fast and Slow</div>
-                <div class="story-author">Daniel Kahneman</div>
-                <div class="reason-tag">Category explorer</div>
-                <div class="divider"></div>
-                <div class="story-actions">
-                  <div class="feedback-buttons">
-                    <button class="feedback-btn">👍</button>
-                    <button class="feedback-btn">👎</button>
-                  </div>
-                  <button class="play-btn">▶</button>
-                </div>
-              </div>
-            </div>
+          <div class="story-grid" id="newDiscoveries">
+            <!-- New Discoveries stories will be loaded here -->
           </div>
         </div>
       </div>
