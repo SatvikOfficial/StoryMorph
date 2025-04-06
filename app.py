@@ -210,7 +210,7 @@ def get_recommendations():
             sample_stories = [
                 s for s in sample_stories if s['category'] == category]
 
-        # Return all recommendations
+        # Return all recommendations in the correct structure
         return jsonify({
             'highly_recommended': sample_stories[:6],
             'because_you_listened': sample_stories[6:12],
