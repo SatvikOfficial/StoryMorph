@@ -11,12 +11,56 @@
       let currentUserId = null;
       let userPreferences = {};
 
-      // Sample users data
+      // Sample users with their preferences
       const users = [
-        { id: 1, name: "Alex Johnson" },
-        { id: 2, name: "Taylor Smith" },
-        { id: 3, name: "Jordan Lee" },
-        { id: 4, name: "Morgan Brown" },
+        {
+          id: 1,
+          name: "Alex Johnson",
+          preferences: {
+            Fiction: "high",
+            Mystery: "high",
+            SelfHelp: "medium",
+            Romance: "low",
+            History: "medium",
+            Business: "low",
+          },
+        },
+        {
+          id: 2,
+          name: "Taylor Smith",
+          preferences: {
+            Fiction: "medium",
+            Mystery: "low",
+            SelfHelp: "high",
+            Romance: "medium",
+            History: "high",
+            Business: "high",
+          },
+        },
+        {
+          id: 3,
+          name: "Jordan Lee",
+          preferences: {
+            Fiction: "high",
+            Mystery: "medium",
+            SelfHelp: "low",
+            Romance: "high",
+            History: "low",
+            Business: "medium",
+          },
+        },
+        {
+          id: 4,
+          name: "Morgan Brown",
+          preferences: {
+            Fiction: "low",
+            Mystery: "high",
+            SelfHelp: "high",
+            Romance: "medium",
+            History: "high",
+            Business: "low",
+          },
+        },
       ];
 
       // Sample audiobooks data
@@ -363,42 +407,7 @@
         }
       }
 
-      // Load users from backend
-      async function loadUsers() {
-        try {
-          console.log("Loading users from:", `${API_BASE_URL}/api/users`);
-          const response = await fetchWithCORS(`${API_BASE_URL}/api/users`);
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const data = await response.json();
-          console.log("Received users:", data);
-
-          const userSelect = document.getElementById("userSelect");
-          if (!userSelect) {
-            console.error("User select element not found!");
-            return;
-          }
-
-          userSelect.innerHTML = '<option value="">Select a user</option>';
-          data.forEach((user) => {
-            const option = document.createElement("option");
-            option.value = user.id;
-            option.textContent = user.name;
-            userSelect.appendChild(option);
-          });
-          console.log("Users loaded successfully");
-        } catch (error) {
-          console.error("Error loading users:", error);
-          const userSelect = document.getElementById("userSelect");
-          if (userSelect) {
-            userSelect.innerHTML =
-              '<option value="">Error loading users</option>';
-          }
-        }
-      }
-
-      // Load recommendations from backend
+      // Load recommendations from AI model
       async function loadRecommendations() {
         if (!currentUserId) {
           console.log("No user selected, skipping recommendations");
@@ -406,15 +415,37 @@
         }
 
         try {
-          console.log("Loading recommendations for user:", currentUserId);
+          const user = users.find((u) => u.id === parseInt(currentUserId));
+          if (!user) {
+            console.error("User not found");
+            return;
+          }
+
+          console.log("Loading AI recommendations for user:", user.name);
           const response = await fetchWithCORS(
-            `${API_BASE_URL}/api/recommendations?user_id=${currentUserId}`
+            `${API_BASE_URL}/api/recommendations`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                user_id: currentUserId,
+                preferences: user.preferences,
+                category:
+                  document.querySelector(".filter-chip.active")?.textContent ||
+                  "All",
+                type: "highly_recommended",
+              }),
+            }
           );
+
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
+
           const data = await response.json();
-          console.log("Received recommendations:", data);
+          console.log("AI recommendations received:", data);
 
           // Update each section with its stories
           const sections = {
@@ -456,8 +487,12 @@
                   <div class="divider"></div>
                   <div class="story-actions">
                     <div class="feedback-buttons">
-                      <button class="feedback-btn">👍</button>
-                      <button class="feedback-btn">👎</button>
+                      <button class="feedback-btn" onclick="handleFeedback(${
+                        story.id
+                      }, true)">👍</button>
+                      <button class="feedback-btn" onclick="handleFeedback(${
+                        story.id
+                      }, false)">👎</button>
                     </div>
                     <button class="play-btn">▶</button>
                   </div>
@@ -466,9 +501,47 @@
               container.appendChild(card);
             });
           });
-          console.log("Recommendations loaded successfully");
         } catch (error) {
-          console.error("Error loading recommendations:", error);
+          console.error("Error loading AI recommendations:", error);
+        }
+      }
+
+      // Handle user feedback
+      async function handleFeedback(storyId, isPositive) {
+        if (!currentUserId) {
+          alert("Please select a user first");
+          return;
+        }
+
+        try {
+          const response = await fetchWithCORS(`${API_BASE_URL}/api/feedback`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: currentUserId,
+              story_id: storyId,
+              is_positive: isPositive,
+              section: "highly_recommended",
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = await response.json();
+          if (result.status === "success") {
+            console.log("Feedback saved successfully");
+            // Reload recommendations to reflect the feedback
+            await loadRecommendations();
+          } else {
+            throw new Error(result.error || "Failed to save feedback");
+          }
+        } catch (error) {
+          console.error("Error saving feedback:", error);
+          alert("Error saving feedback: " + error.message);
         }
       }
 
@@ -480,14 +553,19 @@
         }
 
         try {
-          const response = await fetch(
+          const user = users.find((u) => u.id === parseInt(currentUserId));
+          if (!user) {
+            alert("User not found");
+            return;
+          }
+
+          // Update user preferences
+          user.preferences = userPreferences;
+
+          const response = await fetchWithCORS(
             `${API_BASE_URL}/api/users/${currentUserId}/preferences`,
             {
               method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-              },
               body: JSON.stringify({
                 preferences: userPreferences,
               }),
