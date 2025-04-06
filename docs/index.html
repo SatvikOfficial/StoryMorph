@@ -434,6 +434,15 @@
             return;
           }
 
+          // Update section title for "Because You Listened" section
+          if (sectionId === "becauseYouListened" && stories.length > 0) {
+            const sectionTitle =
+              container.parentElement.querySelector(".section-title");
+            if (sectionTitle) {
+              sectionTitle.textContent = `Because You Listened to "${stories[0].title}"`;
+            }
+          }
+
           container.innerHTML = "";
           stories.forEach((story) => {
             const card = document.createElement("div");

@@ -202,6 +202,54 @@ def get_recommendations():
                 'category': 'Fiction',
                 'match_score': 58,
                 'cover_image': '/static/placeholder.jpg'
+            },
+            {
+                'id': 19,
+                'title': 'Think Like a Monk',
+                'author': 'Jay Shetty',
+                'category': 'Self-Help',
+                'match_score': 96,
+                'cover_image': '/static/placeholder.jpg'
+            },
+            {
+                'id': 20,
+                'title': 'The 5 AM Club',
+                'author': 'Robin Sharma',
+                'category': 'Self-Help',
+                'match_score': 93,
+                'cover_image': '/static/placeholder.jpg'
+            },
+            {
+                'id': 21,
+                'title': 'The Miracle Morning',
+                'author': 'Hal Elrod',
+                'category': 'Self-Help',
+                'match_score': 91,
+                'cover_image': '/static/placeholder.jpg'
+            },
+            {
+                'id': 22,
+                'title': 'The Compound Effect',
+                'author': 'Darren Hardy',
+                'category': 'Self-Help',
+                'match_score': 89,
+                'cover_image': '/static/placeholder.jpg'
+            },
+            {
+                'id': 23,
+                'title': 'The One Thing',
+                'author': 'Gary Keller',
+                'category': 'Self-Help',
+                'match_score': 87,
+                'cover_image': '/static/placeholder.jpg'
+            },
+            {
+                'id': 24,
+                'title': 'Deep Work',
+                'author': 'Cal Newport',
+                'category': 'Self-Help',
+                'match_score': 85,
+                'cover_image': '/static/placeholder.jpg'
             }
         ]
 
@@ -210,11 +258,24 @@ def get_recommendations():
             sample_stories = [
                 s for s in sample_stories if s['category'] == category]
 
+        # Sort stories by match score
+        sample_stories.sort(key=lambda x: x['match_score'], reverse=True)
+
+        # Get the highest rated book for "Because You Listened" section
+        highest_rated = sample_stories[0] if sample_stories else None
+
+        # Get similar books (same category) for "Because You Listened" section
+        similar_books = []
+        if highest_rated:
+            similar_books = [s for s in sample_stories[1:]
+                             if s['category'] == highest_rated['category']][:5]
+
         # Return all recommendations in the correct structure
         return jsonify({
             'highly_recommended': sample_stories[:6],
-            'because_you_listened': sample_stories[6:12],
-            'new_discoveries': sample_stories[12:18]
+            'because_you_listened': [highest_rated] + similar_books if highest_rated else [],
+            # Always return 3 books for new discoveries
+            'new_discoveries': sample_stories[6:9]
         })
 
     except Exception as e:
