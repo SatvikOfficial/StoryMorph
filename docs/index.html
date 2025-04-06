@@ -380,20 +380,37 @@
 
       // Load recommendations based on user preferences
       async function loadRecommendations(category = null) {
-        if (!currentUserId) {
-          console.log("No user selected, skipping recommendations");
+        const userId = document.getElementById("userSelect").value;
+        console.log("Loading recommendations for user:", userId);
+
+        if (!userId) {
+          // Show welcome message and hide all recommendation sections
+          document.getElementById("welcomeMessage").style.display = "block";
+          document
+            .querySelectorAll(".recommendation-section")
+            .forEach((section) => {
+              section.style.display = "none";
+            });
           return;
         }
 
+        // Hide welcome message and show recommendation sections
+        document.getElementById("welcomeMessage").style.display = "none";
+        document
+          .querySelectorAll(".recommendation-section")
+          .forEach((section) => {
+            section.style.display = "block";
+          });
+
         try {
-          console.log("Loading recommendations for user:", currentUserId);
+          console.log("Loading recommendations for user:", userId);
           const response = await fetch("/api/recommendations", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              user_id: currentUserId,
+              user_id: userId,
               preferences: userPreferences,
               category: category,
               type: "all",
@@ -914,6 +931,34 @@
         }
       `;
       document.head.appendChild(style);
+
+      // Add styles for welcome message
+      const welcomeMessageStyle = document.createElement("style");
+      welcomeMessageStyle.textContent = `
+        .welcome-message {
+          text-align: center;
+          padding: 2rem;
+          background-color: #f8f9fa;
+          border-radius: 8px;
+          margin: 2rem 0;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .welcome-message h2 {
+          color: #2c3e50;
+          margin-bottom: 1rem;
+        }
+        .welcome-message p {
+          color: #666;
+          font-size: 1.1rem;
+        }
+        .recommendation-section {
+          display: none;
+        }
+        .recommendation-section.visible {
+          display: block;
+        }
+      `;
+      document.head.appendChild(welcomeMessageStyle);
     </script>
     <style>
       :root {
@@ -1558,44 +1603,59 @@
           </div>
         </div>
 
-        <div class="section">
-          <div class="section-header">
-            <div class="section-title">Highly Recommended for You</div>
-            <div class="section-actions">
-              <div class="view-all">View All</div>
+        <div class="recommendations-container">
+          <div id="welcomeMessage" class="welcome-message">
+            <h2>Welcome to StoryMorph!</h2>
+            <p>
+              Please select a user from the dropdown menu to see personalized
+              book recommendations.
+            </p>
+          </div>
+          <div id="highlyRecommended" class="recommendation-section">
+            <div class="section">
+              <div class="section-header">
+                <div class="section-title">Highly Recommended for You</div>
+                <div class="section-actions">
+                  <div class="view-all">View All</div>
+                </div>
+              </div>
+
+              <div class="story-grid" id="highlyRecommended">
+                <!-- Highly Recommended stories will be loaded here -->
+              </div>
             </div>
           </div>
 
-          <div class="story-grid" id="highlyRecommended">
-            <!-- Highly Recommended stories will be loaded here -->
-          </div>
-        </div>
+          <div id="becauseYouListened" class="recommendation-section">
+            <div class="section">
+              <div class="section-header">
+                <div class="section-title">
+                  Because You Listened to "Think Like a Monk"
+                </div>
+                <div class="section-actions">
+                  <div class="view-all">View All</div>
+                </div>
+              </div>
 
-        <div class="section">
-          <div class="section-header">
-            <div class="section-title">
-              Because You Listened to "Think Like a Monk"
-            </div>
-            <div class="section-actions">
-              <div class="view-all">View All</div>
-            </div>
-          </div>
-
-          <div class="story-grid" id="becauseYouListened">
-            <!-- Because You Listened stories will be loaded here -->
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-header">
-            <div class="section-title">New Discoveries</div>
-            <div class="section-actions">
-              <div class="view-all">View All</div>
+              <div class="story-grid" id="becauseYouListened">
+                <!-- Because You Listened stories will be loaded here -->
+              </div>
             </div>
           </div>
 
-          <div class="story-grid" id="newDiscoveries">
-            <!-- New Discoveries stories will be loaded here -->
+          <div id="newDiscoveries" class="recommendation-section">
+            <div class="section">
+              <div class="section-header">
+                <div class="section-title">New Discoveries</div>
+                <div class="section-actions">
+                  <div class="view-all">View All</div>
+                </div>
+              </div>
+
+              <div class="story-grid" id="newDiscoveries">
+                <!-- New Discoveries stories will be loaded here -->
+              </div>
+            </div>
           </div>
         </div>
       </div>
