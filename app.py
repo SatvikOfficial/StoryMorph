@@ -5,9 +5,8 @@ from ai_model import StoryRecommender
 import os
 
 app = Flask(__name__, static_folder='static')
-# Updated CORS settings for GitHub Pages
-CORS(app, resources={
-     r"/api/*": {"origins": ["https://satvikofficial.github.io"]}})
+# Allow CORS from all origins
+CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///storymorph.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -26,12 +25,16 @@ def index():
 
 @app.route('/api/users')
 def get_users():
-    users = User.query.all()
-    return jsonify([{
-        'id': user.id,
-        'username': user.username,
-        'preferences': user.preferences
-    } for user in users])
+    # Sample users for testing
+    users = [
+        {'id': 1, 'username': 'Alex', 'preferences': {
+            'Fiction': 'high', 'Self-Help': 'medium', 'Mystery': 'low'}},
+        {'id': 2, 'username': 'Taylor', 'preferences': {
+            'Fiction': 'medium', 'Self-Help': 'high', 'Mystery': 'medium'}},
+        {'id': 3, 'username': 'Jordan', 'preferences': {
+            'Fiction': 'low', 'Self-Help': 'high', 'Mystery': 'high'}}
+    ]
+    return jsonify(users)
 
 
 @app.route('/api/recommendations')
