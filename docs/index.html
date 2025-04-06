@@ -133,8 +133,28 @@
       // User switching functionality
       async function loadUsers() {
         try {
-          const users = await fetchWithCORS(`${API_BASE_URL}/api/users`);
+          console.log("Loading users from:", `${API_BASE_URL}/api/users`);
+          const response = await fetch(`${API_BASE_URL}/api/users`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            mode: "cors",
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const users = await response.json();
+          console.log("Received users:", users);
+
           const userSelect = document.getElementById("userSelect");
+          if (!userSelect) {
+            console.error("User select element not found");
+            return;
+          }
 
           userSelect.innerHTML = '<option value="">Select User</option>';
           users.forEach((user) => {
@@ -143,51 +163,16 @@
             option.textContent = user.username;
             userSelect.appendChild(option);
           });
+
+          console.log("User select populated with", users.length, "users");
         } catch (error) {
           console.error("Error loading users:", error);
-        }
-      }
-
-      // Load recommendations with optional category filter
-      async function loadRecommendations(category = null) {
-        try {
-          let url = `${API_BASE_URL}/api/recommendations?user_id=${currentUserId}`;
-          if (category) {
-            url += `&category=${encodeURIComponent(category)}`;
+          // Show error message to user
+          const userSelect = document.getElementById("userSelect");
+          if (userSelect) {
+            userSelect.innerHTML =
+              '<option value="">Error loading users</option>';
           }
-
-          const data = await fetchWithCORS(url);
-
-          // Update each section with recommendations
-          ["highlyRecommended", "becauseYouListened", "newDiscoveries"].forEach(
-            (section, index) => {
-              const container = document.getElementById(section);
-              if (!container) {
-                console.error(`Container ${section} not found`);
-                return;
-              }
-
-              container.innerHTML = "";
-              const stories = data.stories.slice(index * 6, (index + 1) * 6);
-              stories.forEach((story) => {
-                const card = document.createElement("div");
-                card.className = "story-card";
-                card.innerHTML = `
-                <img src="${
-                  story.cover_image ||
-                  "https://storymorph-backend.onrender.com/static/placeholder.jpg"
-                }" alt="${story.title}">
-                <h3>${story.title}</h3>
-                <p>${story.author}</p>
-                <p>${story.category}</p>
-                <p>Match: ${story.match_score}</p>
-              `;
-                container.appendChild(card);
-              });
-            }
-          );
-        } catch (error) {
-          console.error("Error loading recommendations:", error);
         }
       }
 
@@ -199,31 +184,336 @@
         }
 
         try {
-          const response = await fetchWithCORS(
+          const response = await fetch(
             `${API_BASE_URL}/api/users/${currentUserId}/preferences`,
             {
               method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
               body: JSON.stringify({
                 preferences: userPreferences,
               }),
             }
           );
 
-          alert("Preferences saved successfully!");
-          document.getElementById("customizePopup").classList.remove("show");
-          overlay.classList.remove("show");
-          setTimeout(() => {
-            document.getElementById("customizePopup").style.display = "none";
-          }, 300);
-          await loadRecommendations();
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = await response.json();
+          if (result.status === "success") {
+            alert("Preferences saved successfully!");
+            document.getElementById("customizePopup").classList.remove("show");
+            overlay.classList.remove("show");
+            setTimeout(() => {
+              document.getElementById("customizePopup").style.display = "none";
+            }, 300);
+            await loadRecommendations();
+          } else {
+            throw new Error(result.error || "Failed to save preferences");
+          }
         } catch (error) {
           console.error("Error saving preferences:", error);
-          alert("Error saving preferences");
+          alert("Error saving preferences: " + error.message);
         }
       }
 
+      // Load recommendations with optional category filter
+      async function loadRecommendations(category = null) {
+        try {
+          let url = `${API_BASE_URL}/api/recommendations?user_id=${currentUserId}`;
+          if (category) {
+            url += `&category=${encodeURIComponent(category)}`;
+          }
+
+          const data = await fetch(url);
+          if (!data.ok) {
+            throw new Error(`HTTP error! status: ${data.status}`);
+          }
+          const result = await data.json();
+          const stories = result.stories;
+
+          // Update each section with recommendations
+          ["highlyRecommended", "becauseYouListened", "newDiscoveries"].forEach(
+            (section, index) => {
+              const container = document.getElementById(section);
+              if (!container) {
+                console.error(`Container ${section} not found`);
+                return;
+              }
+
+              container.innerHTML = "";
+              const startIndex = index * 6;
+              const endIndex = startIndex + 6;
+              const sectionStories = stories.slice(startIndex, endIndex);
+
+              sectionStories.forEach((story) => {
+                const card = document.createElement("div");
+                card.className = "story-card";
+                const matchClass =
+                  story.match_score >= 90
+                    ? "high-match"
+                    : story.match_score >= 75
+                    ? "medium-match"
+                    : "low-match";
+                card.innerHTML = `
+                <div class="story-cover">
+                  <img src="${story.cover_image}" alt="${story.title}">
+                  <div class="match-badge ${matchClass}">${
+                  story.match_score
+                }% Match</div>
+                </div>
+                <div class="story-info">
+                  <div class="story-title">${story.title}</div>
+                  <div class="story-author">${story.author}</div>
+                  <div class="reason-tag">Based on your ${story.category.toLowerCase()} preference</div>
+                  <div class="divider"></div>
+                  <div class="story-actions">
+                    <div class="feedback-buttons">
+                      <button class="feedback-btn">👍</button>
+                      <button class="feedback-btn">👎</button>
+                    </div>
+                    <button class="play-btn">▶</button>
+                  </div>
+                </div>
+              `;
+                container.appendChild(card);
+              });
+            }
+          );
+        } catch (error) {
+          console.error("Error loading recommendations:", error);
+        }
+      }
+
+      // Add preloader
+      const preloader = document.createElement("div");
+      preloader.className = "preloader";
+      preloader.innerHTML = `
+        <div class="preloader-content">
+          <div class="spinner"></div>
+          <p>Loading StoryMorph...</p>
+        </div>
+      `;
+      document.body.appendChild(preloader);
+
+      // Show preloader when loading
+      function showPreloader() {
+        preloader.style.display = "flex";
+        document.body.style.overflow = "hidden";
+      }
+
+      // Hide preloader when done
+      function hidePreloader() {
+        preloader.style.display = "none";
+        document.body.style.overflow = "auto";
+      }
+
+      // Add See More functionality
+      function showCategoryPopup(category) {
+        const popup = document.createElement("div");
+        popup.className = "category-popup";
+        popup.innerHTML = `
+          <div class="category-popup-content">
+            <h2>${category} Stories</h2>
+            <div class="category-stories"></div>
+            <button class="close-popup">×</button>
+          </div>
+        `;
+        document.body.appendChild(popup);
+        document.body.style.overflow = "hidden";
+
+        // Load stories for this category
+        loadCategoryStories(category, popup.querySelector(".category-stories"));
+
+        // Close button functionality
+        popup.querySelector(".close-popup").addEventListener("click", () => {
+          popup.remove();
+          document.body.style.overflow = "auto";
+        });
+
+        // Close on overlay click
+        popup.addEventListener("click", (e) => {
+          if (e.target === popup) {
+            popup.remove();
+            document.body.style.overflow = "auto";
+          }
+        });
+      }
+
+      async function loadCategoryStories(category, container) {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/recommendations?category=${encodeURIComponent(
+              category
+            )}`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          const stories = data.stories;
+
+          container.innerHTML = "";
+          stories.forEach((story) => {
+            const card = document.createElement("div");
+            card.className = "story-card";
+            const matchClass =
+              story.match_score >= 90
+                ? "high-match"
+                : story.match_score >= 75
+                ? "medium-match"
+                : "low-match";
+            card.innerHTML = `
+              <div class="story-cover">
+                <img src="${story.cover_image}" alt="${story.title}">
+                <div class="match-badge ${matchClass}">${
+              story.match_score
+            }% Match</div>
+              </div>
+              <div class="story-info">
+                <div class="story-title">${story.title}</div>
+                <div class="story-author">${story.author}</div>
+                <div class="reason-tag">Based on your ${story.category.toLowerCase()} preference</div>
+                <div class="divider"></div>
+                <div class="story-actions">
+                  <div class="feedback-buttons">
+                    <button class="feedback-btn">👍</button>
+                    <button class="feedback-btn">👎</button>
+                  </div>
+                  <button class="play-btn">▶</button>
+                </div>
+              </div>
+            `;
+            container.appendChild(card);
+          });
+        } catch (error) {
+          console.error("Error loading category stories:", error);
+          container.innerHTML =
+            "<p>Error loading stories. Please try again later.</p>";
+        }
+      }
+
+      // Add styles for category popup
+      const categoryPopupStyle = document.createElement("style");
+      categoryPopupStyle.textContent = `
+        .category-popup {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .category-popup-content {
+          background: white;
+          border-radius: 12px;
+          padding: 20px;
+          width: 90%;
+          max-width: 1200px;
+          max-height: 90vh;
+          overflow-y: auto;
+          position: relative;
+        }
+
+        .category-popup h2 {
+          margin-bottom: 20px;
+          color: #333;
+        }
+
+        .category-stories {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: 20px;
+          padding: 10px;
+        }
+
+        .close-popup {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: none;
+          border: none;
+          font-size: 24px;
+          cursor: pointer;
+          color: #666;
+        }
+
+        .close-popup:hover {
+          color: #333;
+        }
+
+        @media (max-width: 768px) {
+          .category-popup-content {
+            width: 95%;
+            padding: 15px;
+          }
+
+          .category-stories {
+            grid-template-columns: 1fr;
+          }
+        }
+      `;
+      document.head.appendChild(categoryPopupStyle);
+
+      // Update the story grid sections to include See More buttons
+      function updateStoryGrids() {
+        ["highlyRecommended", "becauseYouListened", "newDiscoveries"].forEach(
+          (section) => {
+            const container = document.getElementById(section);
+            if (container) {
+              const seeMoreBtn = document.createElement("button");
+              seeMoreBtn.className = "see-more-btn";
+              seeMoreBtn.textContent = "See More";
+              seeMoreBtn.addEventListener("click", () => {
+                const category =
+                  container.previousElementSibling.textContent.trim();
+                showCategoryPopup(category);
+              });
+              container.parentElement.appendChild(seeMoreBtn);
+            }
+          }
+        );
+      }
+
+      // Add styles for See More button
+      const seeMoreStyle = document.createElement("style");
+      seeMoreStyle.textContent = `
+        .see-more-btn {
+          background: #3498db;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 20px;
+          cursor: pointer;
+          margin: 20px auto;
+          display: block;
+          transition: background 0.3s;
+        }
+
+        .see-more-btn:hover {
+          background: #2980b9;
+        }
+
+        @media (max-width: 768px) {
+          .see-more-btn {
+            width: 100%;
+            max-width: 200px;
+          }
+        }
+      `;
+      document.head.appendChild(seeMoreStyle);
+
       // Initialize
       document.addEventListener("DOMContentLoaded", () => {
+        showPreloader();
         console.log("DOM loaded, initializing...");
 
         // Add overlay element after DOM is loaded
@@ -232,9 +522,172 @@
         document.body.appendChild(overlay);
 
         initializeEventListeners();
-        loadUsers();
-        loadRecommendations();
+        loadUsers().then(() => {
+          loadRecommendations().then(() => {
+            updateStoryGrids();
+            hidePreloader();
+          });
+        });
       });
+
+      // Add styles for preloader and improved story cards
+      const style = document.createElement("style");
+      style.textContent = `
+        .preloader {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: white;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+        }
+
+        .preloader-content {
+          text-align: center;
+        }
+
+        .spinner {
+          width: 50px;
+          height: 50px;
+          border: 5px solid #f3f3f3;
+          border-top: 5px solid #3498db;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .story-card {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+          transition: transform 0.3s ease;
+          margin: 10px;
+          width: 280px;
+        }
+
+        .story-card:hover {
+          transform: translateY(-5px);
+        }
+
+        .story-cover {
+          position: relative;
+          height: 400px;
+        }
+
+        .story-cover img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .match-badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          padding: 5px 10px;
+          border-radius: 15px;
+          color: white;
+          font-weight: bold;
+          font-size: 14px;
+        }
+
+        .high-match {
+          background: #2ecc71;
+        }
+
+        .medium-match {
+          background: #f1c40f;
+        }
+
+        .low-match {
+          background: #e74c3c;
+        }
+
+        .story-info {
+          padding: 15px;
+        }
+
+        .story-title {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 5px;
+        }
+
+        .story-author {
+          color: #666;
+          margin-bottom: 10px;
+        }
+
+        .reason-tag {
+          background: #f8f9fa;
+          padding: 5px 10px;
+          border-radius: 15px;
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 10px;
+        }
+
+        .divider {
+          height: 1px;
+          background: #eee;
+          margin: 10px 0;
+        }
+
+        .story-actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .feedback-buttons {
+          display: flex;
+          gap: 10px;
+        }
+
+        .feedback-btn {
+          background: none;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+
+        .feedback-btn:hover {
+          transform: scale(1.2);
+        }
+
+        .play-btn {
+          background: #3498db;
+          color: white;
+          border: none;
+          padding: 5px 15px;
+          border-radius: 15px;
+          cursor: pointer;
+          transition: background 0.3s;
+        }
+
+        .play-btn:hover {
+          background: #2980b9;
+        }
+
+        @media (max-width: 768px) {
+          .story-card {
+            width: 100%;
+            max-width: 280px;
+          }
+        }
+      `;
+      document.head.appendChild(style);
     </script>
     <style>
       :root {
