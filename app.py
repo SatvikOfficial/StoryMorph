@@ -253,7 +253,7 @@ def get_recommendations():
             }
         ]
 
-        # Filter by category if specified
+        # Only filter by category if it's not 'All'
         if category != 'All':
             sample_stories = [
                 s for s in sample_stories if s['category'] == category]
@@ -270,12 +270,53 @@ def get_recommendations():
             similar_books = [s for s in sample_stories[1:]
                              if s['category'] == highest_rated['category']][:5]
 
+        # For "All" category, ensure we have a good mix of categories in each section
+        if category == 'All':
+            # Get unique categories
+            categories = list(set(s['category'] for s in sample_stories))
+
+            # For highly recommended, take top 2 from each category
+            highly_recommended = []
+            for cat in categories:
+                cat_books = [
+                    s for s in sample_stories if s['category'] == cat][:2]
+                highly_recommended.extend(cat_books)
+            highly_recommended = sorted(
+                highly_recommended, key=lambda x: x['match_score'], reverse=True)[:6]
+
+            # For new discoveries, take 1 from each category
+            new_discoveries = []
+            for cat in categories:
+                cat_books = [s for s in sample_stories if s['category']
+                             == cat and s not in highly_recommended][:1]
+                new_discoveries.extend(cat_books)
+            new_discoveries = sorted(
+                new_discoveries, key=lambda x: x['match_score'], reverse=True)[:3]
+
+            return jsonify({
+                'highly_recommended': highly_recommended,
+                'because_you_listened': [highest_rated] + similar_books if highest_rated else [],
+                'new_discoveries': new_discoveries
+            })
+
+        # For specific categories, ensure we have enough books for all sections
+        highly_recommended = sample_stories[:6]
+        remaining_stories = sample_stories[6:]
+
+        # If we don't have enough stories for new discoveries, take from highly recommended
+        if len(remaining_stories) < 3:
+            # Take the last 3 books from highly recommended
+            new_discoveries = highly_recommended[-3:]
+            # Update highly recommended to only include the first 3 books
+            highly_recommended = highly_recommended[:3]
+        else:
+            new_discoveries = remaining_stories[:3]
+
         # Return all recommendations in the correct structure
         return jsonify({
-            'highly_recommended': sample_stories[:6],
+            'highly_recommended': highly_recommended,
             'because_you_listened': [highest_rated] + similar_books if highest_rated else [],
-            # Always return 3 books for new discoveries
-            'new_discoveries': sample_stories[6:9]
+            'new_discoveries': new_discoveries
         })
 
     except Exception as e:
