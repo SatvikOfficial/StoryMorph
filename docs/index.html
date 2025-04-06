@@ -7,6 +7,7 @@
     <script>
       // API Configuration
       const API_BASE_URL = "https://storymorph-backend.onrender.com";
+      const PLACEHOLDER_IMAGE = "placeholder.jpg"; // Local path to placeholder image
       let currentUserId = null;
       let userPreferences = {};
 
@@ -260,7 +261,9 @@
                     : "low-match";
                 card.innerHTML = `
                 <div class="story-cover">
-                  <img src="${story.cover_image}" alt="${story.title}">
+                  <img src="${story.cover_image || PLACEHOLDER_IMAGE}" alt="${
+                  story.title
+                }">
                   <div class="match-badge ${matchClass}">${
                   story.match_score
                 }% Match</div>
@@ -368,7 +371,9 @@
                 : "low-match";
             card.innerHTML = `
               <div class="story-cover">
-                <img src="${story.cover_image}" alt="${story.title}">
+                <img src="${story.cover_image || PLACEHOLDER_IMAGE}" alt="${
+              story.title
+            }">
                 <div class="match-badge ${matchClass}">${
               story.match_score
             }% Match</div>
