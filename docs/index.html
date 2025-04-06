@@ -10,6 +10,7 @@
       const PLACEHOLDER_IMAGE = "./placeholder.jpg";
       let currentUserId = null;
       let userPreferences = {};
+      let userFeedback = {};
 
       // Sample users with their preferences
       const users = [
@@ -501,6 +502,23 @@
         }
 
         try {
+          // Get the button that was clicked
+          const button = event.target;
+          const isLike = feedback === "like";
+
+          // Remove any existing feedback classes
+          document.querySelectorAll(".feedback-btn").forEach((btn) => {
+            btn.classList.remove("liked", "disliked");
+          });
+
+          // Add the appropriate feedback class
+          button.classList.add(isLike ? "liked" : "disliked");
+
+          // Remove the class after animation completes
+          setTimeout(() => {
+            button.classList.remove(isLike ? "liked" : "disliked");
+          }, 1000);
+
           const response = await fetch("/api/feedback", {
             method: "POST",
             headers: {
@@ -516,6 +534,15 @@
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
+
+          // Store feedback in memory
+          if (!userFeedback) {
+            userFeedback = {};
+          }
+          if (!userFeedback[currentUserId]) {
+            userFeedback[currentUserId] = {};
+          }
+          userFeedback[currentUserId][storyId] = feedback;
 
           // Reload recommendations after feedback
           await loadRecommendations();
@@ -895,10 +922,55 @@
           font-size: 20px;
           cursor: pointer;
           transition: transform 0.2s;
+          position: relative;
         }
 
         .feedback-btn:hover {
           transform: scale(1.2);
+        }
+
+        .feedback-btn.liked {
+          color: #2ecc71;
+          animation: likeAnimation 0.5s ease;
+        }
+
+        .feedback-btn.disliked {
+          color: #e74c3c;
+          animation: dislikeAnimation 0.5s ease;
+        }
+
+        @keyframes likeAnimation {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.5) rotate(-10deg); }
+          100% { transform: scale(1); }
+        }
+
+        @keyframes dislikeAnimation {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.5) rotate(10deg); }
+          100% { transform: scale(1); }
+        }
+
+        .feedback-btn::after {
+          content: '';
+          position: absolute;
+          top: -10px;
+          left: 50%;
+          transform: translateX(-50%);
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+
+        .feedback-btn.liked::after {
+          content: 'Liked!';
+          color: #2ecc71;
+          opacity: 1;
+        }
+
+        .feedback-btn.disliked::after {
+          content: 'Disliked!';
+          color: #e74c3c;
+          opacity: 1;
         }
 
         .play-btn {
