@@ -6,7 +6,200 @@
     <title>StoryMorph - Kuku FM</title>
     <script>
       // API Configuration
-      const API_BASE_URL = "https://storymorph-backend.onrender.com"; // Replace with your actual Render URL
+      const API_BASE_URL = "https://storymorph-backend.onrender.com";
+      let currentUserId = null;
+      let userPreferences = {};
+
+      // Initialize the customize button
+      document.querySelector(".filter-chip").addEventListener("click", () => {
+        document.getElementById("customizePopup").style.display = "block";
+        document.getElementById("customizePopup").classList.add("show");
+        overlay.classList.add("show");
+      });
+
+      // User switching functionality
+      async function loadUsers() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/users`);
+          const users = await response.json();
+          const userSelect = document.getElementById("userSelect");
+
+          userSelect.innerHTML = '<option value="">Select User</option>';
+          users.forEach((user) => {
+            const option = document.createElement("option");
+            option.value = user.id;
+            option.textContent = user.username;
+            userSelect.appendChild(option);
+          });
+        } catch (error) {
+          console.error("Error loading users:", error);
+        }
+      }
+
+      // Category filtering
+      document.querySelectorAll(".filter-chip").forEach((chip) => {
+        chip.addEventListener("click", async function () {
+          // Remove active class from all chips
+          document
+            .querySelectorAll(".filter-chip")
+            .forEach((c) => c.classList.remove("active"));
+          // Add active class to clicked chip
+          this.classList.add("active");
+
+          // If it's not the "All Categories" chip, filter by category
+          if (this.textContent !== "All Categories") {
+            await loadRecommendations(this.textContent);
+          } else {
+            await loadRecommendations();
+          }
+        });
+      });
+
+      // Update preference handling
+      document.querySelectorAll(".pref-btn").forEach((button) => {
+        button.addEventListener("click", function () {
+          const category = this.dataset.category;
+          const level = this.dataset.level;
+
+          // Remove active class from all buttons in this category
+          this.parentElement.querySelectorAll(".pref-btn").forEach((btn) => {
+            btn.classList.remove("active");
+          });
+
+          // Add active class to clicked button
+          this.classList.add("active");
+
+          // Update the preference in the UI
+          if (!userPreferences[category]) {
+            userPreferences[category] = {};
+          }
+          userPreferences[category] = level;
+        });
+      });
+
+      // Save preferences function
+      async function savePreferences() {
+        if (!currentUserId) {
+          alert("Please select a user first");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/users/${currentUserId}/preferences`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                preferences: userPreferences,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            alert("Preferences saved successfully!");
+            document.getElementById("customizePopup").classList.remove("show");
+            overlay.classList.remove("show");
+            setTimeout(() => {
+              document.getElementById("customizePopup").style.display = "none";
+            }, 300);
+            await loadRecommendations();
+          } else {
+            alert("Failed to save preferences");
+          }
+        } catch (error) {
+          console.error("Error saving preferences:", error);
+          alert("Error saving preferences");
+        }
+      }
+
+      // Load recommendations with optional category filter
+      async function loadRecommendations(category = null) {
+        try {
+          let url = `${API_BASE_URL}/api/recommendations?user_id=${currentUserId}`;
+          if (category) {
+            url += `&category=${encodeURIComponent(category)}`;
+          }
+
+          const response = await fetch(url);
+          const data = await response.json();
+
+          // Update each section with recommendations
+          ["highlyRecommended", "becauseYouListened", "newDiscoveries"].forEach(
+            (section, index) => {
+              const container = document.getElementById(section);
+              container.innerHTML = "";
+
+              const stories = data.stories.slice(index * 6, (index + 1) * 6);
+              stories.forEach((story) => {
+                const card = document.createElement("div");
+                card.className = "story-card";
+                card.innerHTML = `
+                <img src="${
+                  story.cover_image || "/static/placeholder.jpg"
+                }" alt="${story.title}">
+                <h3>${story.title}</h3>
+                <p>${story.author}</p>
+                <p>${story.category}</p>
+                <p>Match: ${story.match_score}</p>
+              `;
+                container.appendChild(card);
+              });
+            }
+          );
+        } catch (error) {
+          console.error("Error loading recommendations:", error);
+        }
+      }
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", () => {
+        loadUsers();
+        loadRecommendations();
+      });
+
+      // Add overlay element
+      const overlay = document.createElement("div");
+      overlay.className = "overlay";
+      document.body.appendChild(overlay);
+
+      // Update close button click handler
+      document
+        .getElementById("closeCustomize")
+        .addEventListener("click", () => {
+          document.getElementById("customizePopup").classList.remove("show");
+          overlay.classList.remove("show");
+          setTimeout(() => {
+            document.getElementById("customizePopup").style.display = "none";
+          }, 300);
+        });
+
+      // Update overlay click handler
+      overlay.addEventListener("click", () => {
+        document.getElementById("customizePopup").classList.remove("show");
+        overlay.classList.remove("show");
+        setTimeout(() => {
+          document.getElementById("customizePopup").style.display = "none";
+        }, 300);
+      });
+
+      // Update save preferences button click handler
+      document
+        .getElementById("savePreferences")
+        .addEventListener("click", savePreferences);
+
+      // User selection handler
+      document
+        .getElementById("userSelect")
+        .addEventListener("change", async (e) => {
+          const userId = e.target.value;
+          if (userId) {
+            currentUserId = userId;
+            await loadRecommendations();
+          }
+        });
     </script>
     <style>
       :root {
@@ -1099,171 +1292,5 @@
         <option value="">Select User</option>
       </select>
     </div>
-
-    <script>
-      // User switching functionality
-      async function loadUsers() {
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/users`);
-          const users = await response.json();
-          const userSelect = document.getElementById("userSelect");
-
-          userSelect.innerHTML = '<option value="">Select User</option>';
-          users.forEach((user) => {
-            const option = document.createElement("option");
-            option.value = user.id;
-            option.textContent = user.username;
-            userSelect.appendChild(option);
-          });
-        } catch (error) {
-          console.error("Error loading users:", error);
-        }
-      }
-
-      document
-        .getElementById("userSelect")
-        .addEventListener("change", async (e) => {
-          const userId = e.target.value;
-          if (userId) {
-            currentUserId = userId;
-            await loadRecommendations();
-          }
-        });
-
-      // Update preference handling
-      document.querySelectorAll(".pref-btn").forEach((button) => {
-        button.addEventListener("click", function () {
-          const category = this.dataset.category;
-          const level = this.dataset.level;
-
-          // Remove active class from all buttons in this category
-          this.parentElement.querySelectorAll(".pref-btn").forEach((btn) => {
-            btn.classList.remove("active");
-          });
-
-          // Add active class to clicked button
-          this.classList.add("active");
-
-          // Update the preference in the UI
-          if (!userPreferences[category]) {
-            userPreferences[category] = {};
-          }
-          userPreferences[category] = level;
-        });
-      });
-
-      // Update save preferences function
-      async function savePreferences() {
-        if (!currentUserId) {
-          alert("Please select a user first");
-          return;
-        }
-
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/api/users/${currentUserId}/preferences`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                preferences: userPreferences,
-              }),
-            }
-          );
-
-          if (response.ok) {
-            alert("Preferences saved successfully!");
-            document.getElementById("customizePopup").style.display = "none";
-            await loadRecommendations();
-          } else {
-            alert("Failed to save preferences");
-          }
-        } catch (error) {
-          console.error("Error saving preferences:", error);
-          alert("Error saving preferences");
-        }
-      }
-
-      // Initialize
-      document.addEventListener("DOMContentLoaded", () => {
-        loadUsers();
-        loadRecommendations();
-      });
-
-      // Add overlay element
-      const overlay = document.createElement("div");
-      overlay.className = "overlay";
-      document.body.appendChild(overlay);
-
-      // Update customize button click handler
-      document.getElementById("customizeBtn").addEventListener("click", () => {
-        document.getElementById("customizePopup").style.display = "block";
-        document.getElementById("customizePopup").classList.add("show");
-        overlay.classList.add("show");
-      });
-
-      // Update close button click handler
-      document
-        .getElementById("closeCustomize")
-        .addEventListener("click", () => {
-          document.getElementById("customizePopup").classList.remove("show");
-          overlay.classList.remove("show");
-          setTimeout(() => {
-            document.getElementById("customizePopup").style.display = "none";
-          }, 300);
-        });
-
-      // Update overlay click handler
-      overlay.addEventListener("click", () => {
-        document.getElementById("customizePopup").classList.remove("show");
-        overlay.classList.remove("show");
-        setTimeout(() => {
-          document.getElementById("customizePopup").style.display = "none";
-        }, 300);
-      });
-
-      // Update save preferences button click handler
-      document
-        .getElementById("savePreferences")
-        .addEventListener("click", savePreferences);
-
-      // Update image handling in loadRecommendations
-      async function loadRecommendations() {
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/api/recommendations?user_id=${currentUserId}`
-          );
-          const data = await response.json();
-
-          // Update each section with recommendations
-          ["highlyRecommended", "becauseYouListened", "newDiscoveries"].forEach(
-            (section, index) => {
-              const container = document.getElementById(section);
-              container.innerHTML = "";
-
-              const stories = data.stories.slice(index * 6, (index + 1) * 6);
-              stories.forEach((story) => {
-                const card = document.createElement("div");
-                card.className = "story-card";
-                card.innerHTML = `
-                <img src="${
-                  story.cover_image || "/static/placeholder.jpg"
-                }" alt="${story.title}">
-                <h3>${story.title}</h3>
-                <p>${story.author}</p>
-                <p>${story.category}</p>
-                <p>Match: ${story.match_score}</p>
-              `;
-                container.appendChild(card);
-              });
-            }
-          );
-        } catch (error) {
-          console.error("Error loading recommendations:", error);
-        }
-      }
-    </script>
   </body>
 </html>
