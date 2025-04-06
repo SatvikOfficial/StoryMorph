@@ -416,6 +416,8 @@
 
       // Update UI with recommendations
       function updateRecommendationsUI(data) {
+        console.log("Updating UI with data:", data);
+
         const sections = {
           highlyRecommended: data.highly_recommended || [],
           becauseYouListened: data.because_you_listened || [],
@@ -423,8 +425,14 @@
         };
 
         Object.entries(sections).forEach(([sectionId, stories]) => {
+          console.log(
+            `Updating section ${sectionId} with ${stories.length} stories`
+          );
           const container = document.getElementById(sectionId);
-          if (!container) return;
+          if (!container) {
+            console.error(`Container not found for section: ${sectionId}`);
+            return;
+          }
 
           container.innerHTML = "";
           stories.forEach((story) => {
