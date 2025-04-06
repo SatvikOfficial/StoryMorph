@@ -131,49 +131,112 @@
         }
       }
 
-      // User switching functionality
+      // Load users from backend
       async function loadUsers() {
         try {
           console.log("Loading users from:", `${API_BASE_URL}/api/users`);
-          const response = await fetch(`${API_BASE_URL}/api/users`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            mode: "cors",
-          });
-
+          const response = await fetchWithCORS(`${API_BASE_URL}/api/users`);
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
-
-          const users = await response.json();
-          console.log("Received users:", users);
+          const data = await response.json();
+          console.log("Received users:", data);
 
           const userSelect = document.getElementById("userSelect");
           if (!userSelect) {
-            console.error("User select element not found");
+            console.error("User select element not found!");
             return;
           }
 
-          userSelect.innerHTML = '<option value="">Select User</option>';
-          users.forEach((user) => {
+          userSelect.innerHTML = '<option value="">Select a user</option>';
+          data.forEach((user) => {
             const option = document.createElement("option");
             option.value = user.id;
-            option.textContent = user.username;
+            option.textContent = user.name;
             userSelect.appendChild(option);
           });
-
-          console.log("User select populated with", users.length, "users");
+          console.log("Users loaded successfully");
         } catch (error) {
           console.error("Error loading users:", error);
-          // Show error message to user
           const userSelect = document.getElementById("userSelect");
           if (userSelect) {
             userSelect.innerHTML =
               '<option value="">Error loading users</option>';
           }
+        }
+      }
+
+      // Load recommendations from backend
+      async function loadRecommendations() {
+        if (!currentUserId) {
+          console.log("No user selected, skipping recommendations");
+          return;
+        }
+
+        try {
+          console.log("Loading recommendations for user:", currentUserId);
+          const response = await fetchWithCORS(
+            `${API_BASE_URL}/api/recommendations?user_id=${currentUserId}`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log("Received recommendations:", data);
+
+          // Update each section with its stories
+          const sections = {
+            highlyRecommended: data.highly_recommended || [],
+            becauseYouListened: data.because_you_listened || [],
+            newDiscoveries: data.new_discoveries || [],
+          };
+
+          Object.entries(sections).forEach(([sectionId, stories]) => {
+            const container = document.getElementById(sectionId);
+            if (!container) {
+              console.error(`Container not found for section: ${sectionId}`);
+              return;
+            }
+
+            container.innerHTML = "";
+            stories.forEach((story) => {
+              const card = document.createElement("div");
+              card.className = "story-card";
+              const matchClass =
+                story.match_score >= 90
+                  ? "high-match"
+                  : story.match_score >= 75
+                  ? "medium-match"
+                  : "low-match";
+              card.innerHTML = `
+                <div class="story-cover">
+                  <img src="${story.cover_image || PLACEHOLDER_IMAGE}" alt="${
+                story.title
+              }">
+                  <div class="match-badge ${matchClass}">${
+                story.match_score
+              }% Match</div>
+                </div>
+                <div class="story-info">
+                  <div class="story-title">${story.title}</div>
+                  <div class="story-author">${story.author}</div>
+                  <div class="reason-tag">Based on your ${story.category.toLowerCase()} preference</div>
+                  <div class="divider"></div>
+                  <div class="story-actions">
+                    <div class="feedback-buttons">
+                      <button class="feedback-btn">👍</button>
+                      <button class="feedback-btn">👎</button>
+                    </div>
+                    <button class="play-btn">▶</button>
+                  </div>
+                </div>
+              `;
+              container.appendChild(card);
+            });
+          });
+          console.log("Recommendations loaded successfully");
+        } catch (error) {
+          console.error("Error loading recommendations:", error);
         }
       }
 
@@ -218,76 +281,6 @@
         } catch (error) {
           console.error("Error saving preferences:", error);
           alert("Error saving preferences: " + error.message);
-        }
-      }
-
-      // Load recommendations with optional category filter
-      async function loadRecommendations(category = null) {
-        try {
-          let url = `${API_BASE_URL}/api/recommendations?user_id=${currentUserId}`;
-          if (category) {
-            url += `&category=${encodeURIComponent(category)}`;
-          }
-
-          const data = await fetch(url);
-          if (!data.ok) {
-            throw new Error(`HTTP error! status: ${data.status}`);
-          }
-          const result = await data.json();
-          const stories = result.stories;
-
-          // Update each section with recommendations
-          ["highlyRecommended", "becauseYouListened", "newDiscoveries"].forEach(
-            (section, index) => {
-              const container = document.getElementById(section);
-              if (!container) {
-                console.error(`Container ${section} not found`);
-                return;
-              }
-
-              container.innerHTML = "";
-              const startIndex = index * 6;
-              const endIndex = startIndex + 6;
-              const sectionStories = stories.slice(startIndex, endIndex);
-
-              sectionStories.forEach((story) => {
-                const card = document.createElement("div");
-                card.className = "story-card";
-                const matchClass =
-                  story.match_score >= 90
-                    ? "high-match"
-                    : story.match_score >= 75
-                    ? "medium-match"
-                    : "low-match";
-                card.innerHTML = `
-                <div class="story-cover">
-                  <img src="${story.cover_image || PLACEHOLDER_IMAGE}" alt="${
-                  story.title
-                }">
-                  <div class="match-badge ${matchClass}">${
-                  story.match_score
-                }% Match</div>
-                </div>
-                <div class="story-info">
-                  <div class="story-title">${story.title}</div>
-                  <div class="story-author">${story.author}</div>
-                  <div class="reason-tag">Based on your ${story.category.toLowerCase()} preference</div>
-                  <div class="divider"></div>
-                  <div class="story-actions">
-                    <div class="feedback-buttons">
-                      <button class="feedback-btn">👍</button>
-                      <button class="feedback-btn">👎</button>
-                    </div>
-                    <button class="play-btn">▶</button>
-                  </div>
-                </div>
-              `;
-                container.appendChild(card);
-              });
-            }
-          );
-        } catch (error) {
-          console.error("Error loading recommendations:", error);
         }
       }
 
